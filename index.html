@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cronómetro de Estacionamiento</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+        #cronometro {
+            font-size: 3em;
+            margin: 20px;
+        }
+        .resultado {
+            font-size: 1.5em;
+            margin: 20px;
+        }
+        button {
+            font-size: 1.2em;
+            padding: 10px 20px;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Cronómetro de Estacionamiento</h1>
+    <div id="cronometro">00:00:00</div>
+    <button onclick="iniciar()">Iniciar</button>
+    <button onclick="detener()">Detener</button>
+    <button onclick="reiniciar()">Reiniciar</button>
+
+    <div class="resultado">
+        <p><strong>Tiempo Total:</strong> <span id="tiempoTotal">00:00:00</span></p>
+        <p><strong>Costo Total:</strong> Bs<span id="costoTotal">0.00</span></p>
+    </div>
+
+    <script>
+        let intervalo;
+        let tiempo = 0;
+        let horaInicio, horaFin, tarifaHora, tarifaFraccion;
+
+        // Obtener parámetros de la URL
+        const urlParams = new URLSearchParams(window.location.search);
+        horaInicio = urlParams.get('horaInicio') || null;
+        horaFin = urlParams.get('horaFin') || null;
+        tarifaHora = parseFloat(urlParams.get('tarifaHora')) || 0;
+        tarifaFraccion = parseFloat(urlParams.get('tarifaFraccion')) || 0;
+
+        // Convertir horas a segundos
+        function convertirASegundos(hora) {
+            const [horas, minutos, segundos] = hora.split(':').map(Number);
+            return horas * 3600 + minutos * 60 + segundos;
+        }
+
+        // Calcular tiempo total y costo
+        function calcularTiempoYCosto() {
+            if (horaInicio && horaFin) {
+                const inicioSegundos = convertirASegundos(horaInicio);
+                const finSegundos = convertirASegundos(horaFin);
+                tiempo = finSegundos - inicioSegundos;
+
+                // Calcular costo
+                const horasTotales = tiempo / 3600;
+                let costo = 0;
+
+                if (tarifaHora) {
+                    costo = Math.ceil(horasTotales) * tarifaHora;
+                } else if (tarifaFraccion) {
+                    const fracciones = Math.ceil(horasTotales * 4); // Fracciones de 15 minutos
+                    costo = fracciones * tarifaFraccion;
+                }
+
+                // Mostrar resultados
+                document.getElementById('tiempoTotal').textContent = formatearTiempo(tiempo);
+                document.getElementById('costoTotal').textContent = costo.toFixed(2);
+            }
+        }
+
+        // Formatear tiempo en HH:MM:SS
+        function formatearTiempo(segundos) {
+            const horas = Math.floor(segundos / 3600);
+            const minutos = Math.floor((segundos % 3600) / 60);
+            const segs = segundos % 60;
+            return `${String(horas).padStart(2, '0')}:${String(minutos).padStart(2, '0')}:${String(segs).padStart(2, '0')}`;
+        }
+
+        // Iniciar cronómetro
+        function iniciar() {
+            if (!intervalo) {
+                intervalo = setInterval(actualizarCronometro, 1000);
+            }
+        }
+
+        // Detener cronómetro
+        function detener() {
+            clearInterval(intervalo);
+            intervalo = null;
+        }
+
+        // Reiniciar cronómetro
+        function reiniciar() {
+            detener();
+            tiempo = 0;
+            actualizarCronometro();
+        }
+
+        // Actualizar cronómetro
+        function actualizarCronometro() {
+            tiempo++;
+            document.getElementById('cronometro').textContent = formatearTiempo(tiempo);
+        }
+
+        // Calcular al cargar la página
+        window.onload = calcularTiempoYCosto;
+    </script>
+
+</body>
+</html>
